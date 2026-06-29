@@ -5,10 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra")
 
-# Richiede Linux per raw sockets
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message(FATAL_ERROR "NetNemesis richiede Linux per i raw sockets")
 endif()
+
+find_package(Threads REQUIRED)
 
 add_executable(netnemesis
     src/main.cpp
@@ -20,9 +21,6 @@ add_executable(netnemesis
 )
 
 target_include_directories(netnemesis PRIVATE include)
+target_link_libraries(netnemesis PRIVATE Threads::Threads)
 
-find_package(Threads REQUIRED)
-target_link_libraries(netnemesis PRIVATE Threads::pthread)
-
-# Installazione
 install(TARGETS netnemesis DESTINATION bin)

