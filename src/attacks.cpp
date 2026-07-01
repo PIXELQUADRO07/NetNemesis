@@ -37,6 +37,11 @@ void AttackEngine::executeSlowloris(const std::string &target, int port, int con
     slowloris.attack(target, port, connections);
 }
 
+void AttackEngine::stopSlowloris() {
+    slowloris.stop();
+    Utils::logInfo("Slowloris fermato");
+}
+
 void AttackEngine::executeARPSpoof(const std::string &target, const std::string &gateway) {
     Utils::animateAttack("ARP SPOOFING", target + " <-> " + gateway);
     arp_spoofer.initialize("eth0"); // o rileva automaticamente

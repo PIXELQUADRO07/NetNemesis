@@ -23,18 +23,11 @@ std::string ServiceFingerprinter::grabBanner(const std::string &ip, int port, do
     
     // Query specifiche per gioco
     if (port == 25565) { // Minecraft Server List Ping
-        // Handshake + Status Request
-        unsigned char handshake[] = {
-            0x10, // Packet length
-            0x00, // Packet ID (Handshake)
-            0x47, 0x00, // Protocol version (71)
-            0x09, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x68, 0x6f, 0x73, 0x74, // "localhost"
-            0x63, 0xdd, // Port (25565)
-            0x01, // Next state (Status)
-            0x01, // Length
-            0x00  // Status Request
+        // Simple legacy ping payload for many servers
+        const unsigned char ping[] = {
+            0xFE, 0x01
         };
-        send(sock, handshake, sizeof(handshake), 0);
+        send(sock, ping, sizeof(ping), 0);
     } else if (port >= 27015 && port <= 27020) { // Source Engine
         // A2S_INFO query
         char a2s_info[] = "\xFF\xFF\xFF\xFF\x54Source Engine Query\0";
@@ -103,9 +96,13 @@ ServiceFingerprinter::ServiceInfo ServiceFingerprinter::fingerprint(const std::s
     // Identificazione basata su porta e risposta
     if (port == 25565) {
         info = parseMinecraftResponse(banner);
+        if (info.name == "Unknown") {
+            info.name = "Minecraft";
+            info.version = "Unknown";
+        }
     } else if (port >= 27015 && port <= 27020) {
         info = parseSourceEngineResponse(banner);
-        info.name = "Source Engine (CS:GO/TF2)";
+        info.name = "Source Engine (CS:GO/TF2/CSS)";
     } else if (banner.find("HTTP") != std::string::npos) {
         info.name = "HTTP Server";
         info.version = "Web Service";

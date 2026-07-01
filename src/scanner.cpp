@@ -1,10 +1,87 @@
 #include "netnemesis.h"
 #include <future>
 #include <chrono>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
 std::atomic<bool> scanner_running(false);
 
 NetworkScanner::NetworkScanner() {}
+
+static std::string hexToIp(const std::string &hex) {
+    if (hex.size() == 8) {
+        std::string ip;
+        for (int i = 0; i < 4; i++) {
+            std::string byte = hex.substr(i * 2, 2);
+            ip = std::to_string(std::stoi(byte, nullptr, 16)) + (i < 3 ? "." : "") + ip;
+        }
+        return ip;
+    }
+
+    if (hex.size() == 32) {
+        struct in6_addr addr6;
+        for (int i = 0; i < 16; i++) {
+            std::string byte = hex.substr(i * 2, 2);
+            addr6.s6_addr[i] = static_cast<unsigned char>(std::stoi(byte, nullptr, 16));
+        }
+        char buf[INET6_ADDRSTRLEN];
+        if (inet_ntop(AF_INET6, &addr6, buf, sizeof(buf)) != nullptr) {
+            return std::string(buf);
+        }
+    }
+
+    return "";
+}
+
+static int hexToPort(const std::string &hex) {
+    return std::stoi(hex, nullptr, 16);
+}
+
+std::vector<std::pair<std::string, int>> NetworkScanner::parseProcNetFile(const std::string &path) {
+    std::vector<std::pair<std::string, int>> connections;
+    std::ifstream file(path);
+    if (!file.is_open()) return connections;
+
+    std::string line;
+    std::getline(file, line); // header
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::string sl, local_address, rem_address, st;
+        if (!(iss >> sl >> local_address >> rem_address >> st)) continue;
+
+        auto colonPos = local_address.find(':');
+        if (colonPos == std::string::npos) continue;
+
+        std::string localIpHex = local_address.substr(0, colonPos);
+        std::string localPortHex = local_address.substr(colonPos + 1);
+        std::string remoteIpHex = rem_address.substr(0, rem_address.find(':'));
+        std::string remotePortHex = rem_address.substr(rem_address.find(':') + 1);
+
+        int remotePort = hexToPort(remotePortHex);
+        std::string remoteIp = hexToIp(remoteIpHex);
+
+        // Solo connessioni stabilite verso host remoti
+        if (st == "01") {
+            connections.emplace_back(remoteIp, remotePort);
+        }
+    }
+    return connections;
+}
+
+std::vector<std::pair<std::string, int>> NetworkScanner::collectLocalConnections() {
+    auto tcp = parseProcNetFile("/proc/net/tcp");
+    auto tcp6 = parseProcNetFile("/proc/net/tcp6");
+    std::vector<std::pair<std::string, int>> connections;
+    connections.insert(connections.end(), tcp.begin(), tcp.end());
+    connections.insert(connections.end(), tcp6.begin(), tcp6.end());
+    return connections;
+}
+
+std::vector<std::pair<std::string, int>> NetworkScanner::getConnections() {
+    std::lock_guard<std::mutex> lock(connections_mutex);
+    return local_connections;
+}
 
 std::string getGameName(int port) {
     switch(port) {
@@ -87,6 +164,24 @@ void NetworkScanner::scanLoop() {
         Utils::logInfo("Thread paralleli: " + std::to_string(num_threads));
         std::cout << "\033[34m[SCAN] Progresso: 0% (0/" << total_hosts << " hosts)\033[0m" << std::flush;
         
+        auto local_sessions = collectLocalConnections();
+        {
+            std::lock_guard<std::mutex> lock(connections_mutex);
+            local_connections.clear();
+            for (auto &conn : local_sessions) {
+                if (getGameName(conn.second) != "Unknown Game") {
+                    local_connections.push_back(conn);
+                }
+            }
+        }
+
+        if (!local_connections.empty()) {
+            Utils::logWarning("Connessioni di gioco locali rilevate:");
+            for (const auto &conn : local_connections) {
+                Utils::logInfo("  - " + getGameName(conn.second) + " | " + conn.first + ":" + std::to_string(conn.second));
+            }
+        }
+
         scanner_running = true;
         std::vector<std::thread> threads;
         int hosts_per_thread = total_hosts / num_threads;

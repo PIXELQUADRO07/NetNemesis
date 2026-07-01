@@ -160,20 +160,27 @@ class NetworkScanner {
 private:
     std::thread scan_thread;
     std::vector<std::pair<std::string, int>> discovered_servers;
+    std::vector<std::pair<std::string, int>> local_connections;
     std::mutex servers_mutex;
+    std::mutex connections_mutex;
     ServiceFingerprinter fingerprinter;
     
     void scanLoop();
     bool probePort(const std::string &ip, int port);
     void scanRange(int start_host, int end_host, const std::vector<int> &ports, 
                    std::atomic<int> &progress, int total_hosts);
+    std::vector<std::pair<std::string, int>> collectLocalConnections();
+    std::vector<std::pair<std::string, int>> parseProcNetFile(const std::string &path);
     
 public:
     NetworkScanner();
     void start();
     void stop();
     std::vector<std::pair<std::string, int>> getServers();
+    std::vector<std::pair<std::string, int>> getConnections();
 };
+
+std::string getGameName(int port);
 
 class AttackEngine {
 private:
@@ -189,6 +196,7 @@ public:
     void executeDDOS(const std::string &target, int port, int bots);
     void executeICMPFlood(const std::string &target, int packets);
     void executeSlowloris(const std::string &target, int port, int connections);
+    void stopSlowloris();
     void executeARPSpoof(const std::string &target, const std::string &gateway);
     void executeHunt();
 };
