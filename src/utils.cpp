@@ -1,5 +1,7 @@
 #include "netnemesis.h"
 #include <sstream>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 void Utils::logInfo(const std::string &msg) {
     std::lock_guard<std::mutex> lock(g_print_mutex);
