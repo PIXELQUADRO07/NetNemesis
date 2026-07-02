@@ -44,11 +44,11 @@ std::vector<std::string> Utils::split(const std::string &s, char delim) {
 
 void Utils::animateAttack(const std::string &type, const std::string &target) {
     std::vector<std::string> frames = {
-        "[    ] Inizializzazione...",
-        "[=>  ] Caricamento payload...",
-        "[==> ] Connessione...",
-        "[===>] Invio pacchetti...",
-        "[████] ATTACCO IN CORSO"
+        "[    ] Initializing...",
+        "[=>  ] Loading payload...",
+        "[==> ] Connecting...",
+        "[===>] Sending packets...",
+        "[████] ATTACK IN PROGRESS"
     };
     
     for (const auto &frame : frames) {
@@ -59,7 +59,7 @@ void Utils::animateAttack(const std::string &type, const std::string &target) {
         usleep(300000);
     }
     std::cout << std::endl;
-    logAttack(type + " su " + target);
+    logAttack(type + " against " + target);
 }
 
 std::string Utils::getMacAddress(const std::string &iface) {

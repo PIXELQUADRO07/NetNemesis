@@ -61,7 +61,7 @@ std::vector<std::pair<std::string, int>> NetworkScanner::parseProcNetFile(const 
         int remotePort = hexToPort(remotePortHex);
         std::string remoteIp = hexToIp(remoteIpHex);
 
-        // Solo connessioni stabilite verso host remoti
+        // Only established connections to remote hosts
         if (st == "01") {
             connections.emplace_back(remoteIp, remotePort);
         }
@@ -123,7 +123,7 @@ void NetworkScanner::scanRange(int start_host, int end_host, const std::vector<i
         std::string ip = "192.168.1." + std::to_string(host);
         
         for (int port : ports) {
-            if (!scanner_running) break; // Controlla flag specifico
+            if (!scanner_running) break; // Check the specific flag
             if (probePort(ip, port)) {
                 std::string game = getGameName(port);
                 {
@@ -140,7 +140,7 @@ void NetworkScanner::scanRange(int start_host, int end_host, const std::vector<i
         if (host % 10 == 0) {
             int percent = (progress * 100) / total_hosts;
             std::lock_guard<std::mutex> lock(g_print_mutex);
-            std::cout << "\r\033[34m[SCAN] Progresso: " << percent << "% (" 
+            std::cout << "\r\033[34m[SCAN] Progress: " << percent << "% (" 
                       << progress << "/" << total_hosts << " hosts)\033[0m" << std::flush;
         }
     }
@@ -160,9 +160,9 @@ void NetworkScanner::scanLoop() {
         std::atomic<int> progress(0);
         discovered_servers.clear();
         
-        Utils::logInfo("Avvio scansione rete 192.168.1.0/24...");
-        Utils::logInfo("Thread paralleli: " + std::to_string(num_threads));
-        std::cout << "\033[34m[SCAN] Progresso: 0% (0/" << total_hosts << " hosts)\033[0m" << std::flush;
+        Utils::logInfo("Starting scan of network 192.168.1.0/24...");
+        Utils::logInfo("Parallel threads: " + std::to_string(num_threads));
+        std::cout << "\033[34m[SCAN] Progress: 0% (0/" << total_hosts << " hosts)\033[0m" << std::flush;
         
         auto local_sessions = collectLocalConnections();
         {
@@ -176,7 +176,7 @@ void NetworkScanner::scanLoop() {
         }
 
         if (!local_connections.empty()) {
-            Utils::logWarning("Connessioni di gioco locali rilevate:");
+            Utils::logWarning("Local game connections detected:");
             for (const auto &conn : local_connections) {
                 Utils::logInfo("  - " + getGameName(conn.second) + " | " + conn.first + ":" + std::to_string(conn.second));
             }
@@ -199,16 +199,16 @@ void NetworkScanner::scanLoop() {
         
         if (!scanner_running) {
             std::cout << std::endl;
-            Utils::logInfo("Scanner fermato dall'utente");
-            return; // Esce dal loop senza chiudere il programma
+            Utils::logInfo("Scanner stopped by user");
+            return; // Exit the loop without terminating the program
         }
         
         std::cout << std::endl;
-        Utils::logInfo("Scansione completata. Server trovati: " + 
+        Utils::logInfo("Scan completed. Servers found: " + 
             std::to_string(discovered_servers.size()));
         
         if (g_auto_hunt && !discovered_servers.empty()) {
-            Utils::logWarning("HUNT MODE: Attacco automatico...");
+            Utils::logWarning("HUNT MODE: Automatic attack...");
             for (const auto &server : discovered_servers) {
                 PacketCrafter pc;
                 pc.initialize();
@@ -216,7 +216,7 @@ void NetworkScanner::scanLoop() {
             }
         }
         
-        Utils::logInfo("Prossima scansione tra 2 minuti...");
+        Utils::logInfo("Next scan in 2 minutes...");
         for (int i = 0; i < 120 && g_running && scanner_running; i++) {
             sleep(1);
         }
@@ -228,7 +228,7 @@ void NetworkScanner::start() {
 }
 
 void NetworkScanner::stop() {
-    scanner_running = false; // Ferma solo lo scanner, non g_running!
+    scanner_running = false; // Stop only the scanner, not g_running!
     if (scan_thread.joinable()) {
         scan_thread.join();
     }

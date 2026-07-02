@@ -21,7 +21,7 @@ std::string ServiceFingerprinter::grabBanner(const std::string &ip, int port, do
         return "";
     }
     
-    // Query specifiche per gioco
+    // Game-specific queries
     if (port == 25565) { // Minecraft Server List Ping
         // Simple legacy ping payload for many servers
         const unsigned char ping[] = {
@@ -33,7 +33,7 @@ std::string ServiceFingerprinter::grabBanner(const std::string &ip, int port, do
         char a2s_info[] = "\xFF\xFF\xFF\xFF\x54Source Engine Query\0";
         send(sock, a2s_info, sizeof(a2s_info), 0);
     } else {
-        // Banner generico
+        // Generic banner
         send(sock, "\r\n", 2, 0);
     }
     
@@ -51,7 +51,7 @@ ServiceFingerprinter::ServiceInfo ServiceFingerprinter::parseMinecraftResponse(c
     ServiceInfo info;
     info.name = "Minecraft";
     
-    // Parsing JSON risposta Minecraft
+    // Parse Minecraft response JSON
     size_t version_pos = data.find("\"version\":");
     if (version_pos != std::string::npos) {
         size_t start = data.find("\"", version_pos + 10);
@@ -93,7 +93,7 @@ ServiceFingerprinter::ServiceInfo ServiceFingerprinter::fingerprint(const std::s
     std::string banner = grabBanner(ip, port);
     if (banner.empty()) return info;
     
-    // Identificazione basata su porta e risposta
+    // Identify based on port and response
     if (port == 25565) {
         info = parseMinecraftResponse(banner);
         if (info.name == "Unknown") {

@@ -5,7 +5,7 @@
 #include <openssl/buffer.h>
 #include <openssl/err.h>
 
-// Tag di autenticazione GCM (16 byte = 128 bit)
+// GCM authentication tag (16 bytes = 128 bits)
 #define GCM_TAG_LEN 16
 
 CryptoManager::CryptoManager() {
@@ -14,8 +14,8 @@ CryptoManager::CryptoManager() {
 }
 
 void CryptoManager::deriveKey(const std::string &password) {
-    // Deriva chiave da password usando SHA-256 semplice
-    // In produzione usare PBKDF2 o Argon2
+    // Derive a key from the password using simple SHA-256
+    // In production use PBKDF2 or Argon2
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (!ctx) return;
     
@@ -29,7 +29,7 @@ void CryptoManager::deriveKey(const std::string &password) {
     
     memcpy(key, hash, AES_KEY_SIZE);
     
-    // Genera IV casuale per ogni sessione
+    // Generate a random IV for each session
     RAND_bytes(iv, AES_IV_SIZE);
 }
 
@@ -79,25 +79,25 @@ std::string CryptoManager::encrypt(const std::string &plaintext) {
     int len;
     int ciphertext_len;
     
-    // Inizializza crittografia
+    // Initialize encryption
     if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Setta IV length
+    // Set IV length
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_IV_SIZE, NULL)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Inizializza con chiave e IV
+    // Initialize with key and IV
     if (!EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Cifra plaintext
+    // Encrypt plaintext
     if (!EVP_EncryptUpdate(ctx, ciphertext.data(), &len, 
                           (unsigned char*)plaintext.c_str(), plaintext.length())) {
         EVP_CIPHER_CTX_free(ctx);
@@ -105,14 +105,14 @@ std::string CryptoManager::encrypt(const std::string &plaintext) {
     }
     ciphertext_len = len;
     
-    // Finalizza
+    // Finalize
     if (!EVP_EncryptFinal_ex(ctx, ciphertext.data() + len, &len)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     ciphertext_len += len;
     
-    // Ottieni tag di autenticazione
+    // Obtain the authentication tag
     unsigned char tag[GCM_TAG_LEN];
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, GCM_TAG_LEN, tag)) {
         EVP_CIPHER_CTX_free(ctx);
@@ -134,10 +134,10 @@ std::string CryptoManager::encrypt(const std::string &plaintext) {
 std::string CryptoManager::decrypt(const std::string &ciphertext_b64) {
     auto data = base64Decode(ciphertext_b64);
     if (data.size() < AES_IV_SIZE + GCM_TAG_LEN) {
-        return ""; // Dati insufficienti
+        return ""; // Insufficient data
     }
     
-    // Estrai IV, Tag e Ciphertext
+    // Extract IV, tag, and ciphertext
     unsigned char recv_iv[AES_IV_SIZE];
     unsigned char tag[GCM_TAG_LEN];
     memcpy(recv_iv, data.data(), AES_IV_SIZE);
@@ -152,25 +152,25 @@ std::string CryptoManager::decrypt(const std::string &ciphertext_b64) {
     int len;
     int plaintext_len;
     
-    // Inizializza
+    // Initialize
     if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Setta IV length
+    // Set IV length
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_IV_SIZE, NULL)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Inizializza con chiave e IV ricevuto
+    // Initialize with the received key and IV
     if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, recv_iv)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Decifra
+    // Decrypt
     if (!EVP_DecryptUpdate(ctx, plaintext.data(), &len, 
                           ciphertext.data(), ciphertext.size())) {
         EVP_CIPHER_CTX_free(ctx);
@@ -178,13 +178,13 @@ std::string CryptoManager::decrypt(const std::string &ciphertext_b64) {
     }
     plaintext_len = len;
     
-    // Setta tag per verifica
+    // Set the tag for verification
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, GCM_TAG_LEN, tag)) {
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
     
-    // Verifica e finalizza
+    // Verify and finalize
     int ret = EVP_DecryptFinal_ex(ctx, plaintext.data() + len, &len);
     EVP_CIPHER_CTX_free(ctx);
     
@@ -193,6 +193,6 @@ std::string CryptoManager::decrypt(const std::string &ciphertext_b64) {
         return std::string((char*)plaintext.data(), plaintext_len);
     }
     
-    // Decrypt fallito (tag non valido = dati corrotti o manomessi)
+    // Decryption failed (invalid tag = corrupted or tampered data)
     return "";
 }

@@ -4,4 +4,4 @@ mkdir -p build
 cd build
 cmake ..
 make -j$(nproc)
-echo "[*] Build completata. Esegui con: sudo ./netnemesis"
+echo "[*] Build completed. Run with: sudo ./netnemesis"

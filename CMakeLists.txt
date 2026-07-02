@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra")
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    message(FATAL_ERROR "NetNemesis richiede Linux")
+    message(FATAL_ERROR "NetNemesis requires Linux")
 endif()
 
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)  # Per crittografia
+find_package(OpenSSL REQUIRED)  # For encryption
 
 add_executable(netnemesis
     src/main.cpp
@@ -19,11 +19,11 @@ add_executable(netnemesis
     src/attacks.cpp
     src/scanner.cpp
     src/utils.cpp
-    src/fingerprint.cpp      # Nuovo
-    src/crypto.cpp           # Nuovo
-    src/icmp_flood.cpp       # Nuovo
-    src/arp_spoofer.cpp      # Nuovo
-    src/slowloris.cpp        # Nuovo
+    src/fingerprint.cpp      # New
+    src/crypto.cpp           # New
+    src/icmp_flood.cpp       # New
+    src/arp_spoofer.cpp      # New
+    src/slowloris.cpp        # New
 )
 
 target_include_directories(netnemesis PRIVATE include)

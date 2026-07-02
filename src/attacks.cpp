@@ -39,15 +39,15 @@ void AttackEngine::executeSlowloris(const std::string &target, int port, int con
 
 void AttackEngine::stopSlowloris() {
     slowloris.stop();
-    Utils::logInfo("Slowloris fermato");
+    Utils::logInfo("Slowloris stopped");
 }
 
 void AttackEngine::executeARPSpoof(const std::string &target, const std::string &gateway) {
     Utils::animateAttack("ARP SPOOFING", target + " <-> " + gateway);
-    arp_spoofer.initialize("eth0"); // o rileva automaticamente
+    arp_spoofer.initialize("eth0"); // or detect automatically
     arp_spoofer.startPoisoning(target, gateway);
 }
 
 void AttackEngine::executeHunt() {
-    Utils::logWarning("Modalità HUNT attiva");
+    Utils::logWarning("HUNT mode active");
 }
